@@ -11,7 +11,7 @@ module BrowseEverything
         # @see Google::Auth::UserRefreshCredentials#fetch_access_token
         # @param options [Hash] the access token values
         def fetch_access_token(options = {})
-          return build_token_hash if access_token
+          # return build_token_hash if access_token
           super(options)
         end
 
