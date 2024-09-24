@@ -24,5 +24,5 @@ sharepoint:
   client_secret: [MyAppClientSecret]
   tenant_id: [MyAzureTenantID]
   redirect_uri: https://avalon_example.com/browse/connect
-  scope: https://graph.microsoft.com/.default
+  scope: offline_access https://graph.microsoft.com/.default
 ```
