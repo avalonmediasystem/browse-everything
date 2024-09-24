@@ -1,20 +1,28 @@
 # Sharepoint Provider
 
-This provider will allow browse-everything to access a _specific_ SharePoint location
+This provider will allow browse-everything to access Sharepoint on behalf of a specific user.
 
-First register an application on azure to give access to the relevant location
+https://learn.microsoft.com/en-us/graph/auth-v2-user?tabs=http
 
-https://learn.microsoft.com/en-us/graph/auth-v2-service?tabs=http (steps 1,2 and 3)
+Prerequisite:
+  * App must be registered in the Entra Admin center to receive client_id, client_secret, and tenant_id.
+  * If using .default endpoint as your scope, you must register API permissions for your application. Minimum permissions:
+    * Files.Read
+    * Files.Read.All
+    * Files.Read.Selected
+    * offline_access
+    * openid
+    * profile
+    * Sites.Read.All
+    * User.Read
 
-To us the sharepoint provider add the following to config/browse_everything_providers.yml
+To use the sharepoint provider add the following to config/browse_everything_providers.yml
 
 ```
 sharepoint:
   client_id: [MyAppClientID]
   client_secret: [MyAppClientSecret]
-  tenant_id: [MyAzuerTenantID]
-  grant_type: client_credentials
+  tenant_id: [MyAzureTenantID]
+  redirect_uri: https://avalon_example.com/browse/connect
   scope: https://graph.microsoft.com/.default
-  domain: mydomain.sharepoint.com
-  site_name: [MySiteName]
 ```

@@ -8,61 +8,52 @@ module BrowseEverything
       class Session
 
         OAUTH2_URLS = { 
-          :site => 'https://login.microsoftonline.com', 
+          :site => 'https://login.microsoftonline.com',
         }
-#          :scope => "https://graph.microsoft.com/.default" 
 
         def initialize(opts={})
-
-          @config = BrowseEverything.config['sharepoint']
+          token_info = opts[:access_token]&.symbolize_keys
 
           if opts[:client_id]
-            @oauth2_client = OAuth2::Client.new(opts[:client_id], opts[:client_secret],{:authorize_url => authorize_url, :token_url => token_url, :scope => scope}.merge!(OAUTH2_URLS.dup))
-            @access_token = OAuth2::AccessToken.new(@oauth2_client, opts[:access_token]) if opts[:access_token]
-            @access_token = get_access_token if opts[:access_token].blank?
-            @refresh_token = opts[:refresh_token] if @config[:grant_type] == 'authorization_code'
-#        @as_user = opts[:as_user]
+            @oauth2_client = OAuth2::Client.new(opts[:client_id], 
+                                                opts[:client_secret], 
+                                                { 
+                                                  authorize_url: authorize_url(opts[:tenant_id]),
+                                                  token_url: token_url(opts[:tenant_id]),
+                                                  redirect_uri: opts[:redirect_uri],
+                                                  scope: opts[:scope] 
+                                                }.merge!(OAUTH2_URLS.dup))
+            return if token_info.blank?
+            @access_token = OAuth2::AccessToken.new(@oauth2_client, 
+                                                    token_info[:token], 
+                                                    { 
+                                                      refresh_token: token_info[:refresh_token], 
+                                                      expires_in: token_info[:expires_in] 
+                                                    })
           end
         end
         
-        def authorize_url
-          @config['tenant_id']+"/oauth2/v2.0/authorize"
+        def authorize_url(tenant_id)
+          tenant_id + "/oauth2/v2.0/authorize"
         end
 
-        def token_url
-          @config['tenant_id']+"/oauth2/v2.0/token"
+        def token_url(tenant_id)
+          tenant_id + "/oauth2/v2.0/token"
         end
 
-        def scope
-          @config['scope']
+        def get_access_token(code)
+          @access_token = @oauth2_client.auth_code.get_token(code)
         end
 
-#        def authorize_url(redirect_uri, state=nil)
-#          opts = { :redirect_uri => redirect_uri }
-#          opts[:state] = state if state
-#
-#          @oauth2_client.auth_code.authorize_url(opts)
-#        end
-
-        def get_access_token(code=nil)
-
-          if @config[:grant_type] == 'client_credentials'
-             @access_token ||= @oauth2_client.client_credentials.get_token({:scope => @config[:scope]})
-          else
-            # assume authorization_code grant_type..?
-            @access_token ||= @oauth2_client.auth_code.get_token(code)
-          end
-        end
-
-        def refresh_token(refresh_token)
-          refresh_access_token_obj = OAuth2::AccessToken.new(@oauth2_client, @access_token.token, {'refresh_token' => refresh_token})
-          @access_token = refresh_access_token_obj.refresh!
+        def refresh_token
+          @access_token = @access_token.refresh!
         end
 
         def build_auth_header
           "BoxAuth api_key=#{@api_key}&auth_token=#{@auth_token}"
         end
 
+        # TODO: Figure out if these HTTP related methods are actually necessary
         def get(url, raw=false)
           uri = URI.parse(url)
           request = Net::HTTP::Get.new( uri.request_uri )
@@ -76,7 +67,6 @@ module BrowseEverything
         end
 
         def request(uri, request, raw=false, retries=0)
-
           http = Net::HTTP.new(uri.host, uri.port)
           http.use_ssl = true
           #http.set_debug_output($stdout)
