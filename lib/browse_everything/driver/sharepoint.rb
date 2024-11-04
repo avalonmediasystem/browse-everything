@@ -208,11 +208,11 @@ module BrowseEverything
 
       def sites
         filter = config[:filter_terms]&.join(' OR ')
-        @sites ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites?search=#{filter}")['value']
+        @sites ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites?$select=id,displayName,name,lastModifiedDateTime&search=#{filter}")['value']
       end
 
       def drives
-        @drives = sharepoint_request("https://graph.microsoft.com/v1.0/me/drives")['value']
+        @drives = sharepoint_request("https://graph.microsoft.com/v1.0/me/drives?$select=id,name,lastModifiedDateTime")['value']
       end
 
       def items_by_id(id)
