@@ -207,7 +207,8 @@ module BrowseEverything
       end
 
       def sites
-        @sites ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites?search=")['value']
+        filter = config[:filter_terms]&.join(' OR ')
+        @sites ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites?search=#{filter}")['value']
       end
 
       def drives
