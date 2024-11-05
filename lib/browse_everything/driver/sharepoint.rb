@@ -41,10 +41,17 @@ module BrowseEverything
       def contents(id = '')
         token_refresh if authorized?
 
-        folder = id.empty? ? drives : items_by_id(id)
+        folder = []
+        if id.empty?
+          folder << sites
+          folder << drives
+        else
+          folder << items_by_id(id)
+        end
+
         values = []
 
-        folder.each do |f|
+        folder.flatten.each do |f|
           values << directory_entry(f)
         end
         @entries = values.compact
@@ -171,7 +178,12 @@ module BrowseEverything
       # @param file [String] ID to the file resource
       # @return [BrowseEverything::File]
       def directory_entry(file)
-        BrowseEverything::FileEntry.new(make_path(file), [key, make_path(file)].join(':'), file['name'], file['size'] ? file['size'] : nil, Date.parse(file['lastModifiedDateTime']), folder?(file))
+        BrowseEverything::FileEntry.new(make_path(file), 
+                                        [key, make_path(file)].join(':'), 
+                                        file['displayName'] ? file['displayName'] : file['name'], 
+                                        file['size'] ? file['size'] : nil, 
+                                        Date.parse(file['lastModifiedDateTime']),
+                                        folder?(file))
       end
 
       # Derives a path from item (file or folder or drive) metadata 
@@ -179,7 +191,9 @@ module BrowseEverything
       def make_path(file)
         if file['parentReference'].present? 
           folder?(file) ? "#{file['parentReference']['driveId']}/items/#{file['id']}/children" : "#{file['parentReference']['driveId']}/items/#{file['id']}"
-        else 
+        elsif file['id'].include?(root_site)
+          "#{file['id']}/drives"
+        else
           "#{file['id']}/root/children"
         end
       end
@@ -188,16 +202,25 @@ module BrowseEverything
         !file['file'].present?
       end
 
-      # def site_id
-      #   @site_id ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites/#{config[:domain]}:/sites/#{config[:site_name]}/")['id']
-      # end
+      def root_site
+        @root_site ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites/root?select=siteCollection")['siteCollection']['hostname']
+      end
+
+      def sites
+        filter = config[:filter_terms]&.join(' OR ')
+        @sites ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites?$select=id,displayName,name,lastModifiedDateTime&search=#{filter}")['value']
+      end
 
       def drives
-        @drives ||= sharepoint_request("https://graph.microsoft.com/v1.0/me/drives")['value']
+        @drives = sharepoint_request("https://graph.microsoft.com/v1.0/me/drives?$select=id,name,lastModifiedDateTime")['value']
       end
 
       def items_by_id(id)
-        item = sharepoint_request("https://graph.microsoft.com/v1.0/me/drives/#{id}")
+        if id.include?(root_site)
+          item = sharepoint_request("https://graph.microsoft.com/v1.0/sites/#{id}")
+        else
+          item = sharepoint_request("https://graph.microsoft.com/v1.0/me/drives/#{id}")
+        end
         item['value'].present? ? item['value'] : item
       end
 
