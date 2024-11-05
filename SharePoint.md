@@ -16,13 +16,14 @@ Prerequisite:
     * Sites.Read.All
     * User.Read
 
-To use the sharepoint provider add the following to config/browse_everything_providers.yml
+To use the sharepoint provider add the following to `config/browse_everything_providers.yml`. The `filter_terms` parameter is optional. Commenting it out will return all sites that a user has access to. If an array of terms is provided the list of sites will be filtered so that only sites containing any of the terms are returned.
 
 ```
 sharepoint:
-  client_id: [MyAppClientID]
-  client_secret: [MyAppClientSecret]
-  tenant_id: [MyAzureTenantID]
+  client_id: MyAppClientID
+  client_secret: MyAppClientSecret
+  tenant_id: MyAzureTenantID
   redirect_uri: https://avalon_example.com/browse/connect
   scope: offline_access https://graph.microsoft.com/.default
+  filter_terms: ['filter', 'terms']
 ```
