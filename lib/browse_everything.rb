@@ -18,7 +18,6 @@ module BrowseEverything
     autoload :S3,          'browse_everything/driver/s3'
     autoload :Sharepoint,  'browse_everything/driver/sharepoint'
 
-
     # Access the sorter set for the base driver class
     # @return [Proc]
     def sorter
