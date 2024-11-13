@@ -6,7 +6,6 @@ module BrowseEverything
   module Driver
     # Driver for accessing the MS-Graph API (https://learn.microsoft.com/en-us/graph/overview)
     class Sharepoint < Base
-
       class << self
         attr_accessor :authentication_klass
 
@@ -86,7 +85,7 @@ module BrowseEverything
       # @return [Array<String, Hash>]
       def link_for(id)
         file = items_by_id(id)
-        extras = {file_name: file['name'], file_size: file['size'].to_i}
+        extras = { file_name: file['name'], file_size: file['size'].to_i }
         [download_url(file), extras]
       end
 
@@ -94,9 +93,8 @@ module BrowseEverything
 
       def auth_query_string
         query = []
-        # keep_if deletes from and returns self, so dup config to not overwrite original
-        base = config.dup.keep_if { |k,v| ['client_id', 'scope', 'redirect_uri'].include?(k) }
-        base.each do |k,v|
+        base = config.slice('client_id', 'scope', 'redirect_uri')
+        base.each do |k, v|
           query += ["#{k}=#{v}"]
         end
         query += ["response_type=code"]
@@ -132,16 +130,16 @@ module BrowseEverything
       end
 
       # If there is an active session, {@token} will be set by {BrowseEverythingController} using data stored in the
-      # session. 
+      # session.
       #
       # @param [OAuth2::AccessToken] access_token
       def register_access_token(access_token)
         @token = {
-                   'token' => access_token.token,
-                   'expires_in' => access_token.expires_in,
-                   'expires_at' => access_token.expires_at,
-                   'refresh_token' => access_token.refresh_token
-                 }
+          'token' => access_token.token,
+          'expires_in' => access_token.expires_in,
+          'expires_at' => access_token.expires_at,
+          'refresh_token' => access_token.refresh_token
+        }
       end
 
       def sharepoint_token
@@ -151,7 +149,8 @@ module BrowseEverything
 
       def expiration_time
         return unless @token
-        @token.fetch('expires_at', nil).to_i
+        expires_at = @token.fetch('expires_at', nil)
+        expires_at.nil? ? nil : expires_at.to_i
       end
 
       def token_expired?
@@ -167,7 +166,7 @@ module BrowseEverything
         http.use_ssl = true if uri.scheme == 'https'
 
         response = http.start do
-          request = Net::HTTP::Get.new(uri.request_uri,{'Authorization' => @auth})
+          request = Net::HTTP::Get.new(uri.request_uri, { 'Authorization' => @auth })
           http.request(request)
         end
         JSON.parse(response.body)
@@ -178,18 +177,18 @@ module BrowseEverything
       # @param file [String] ID to the file resource
       # @return [BrowseEverything::File]
       def directory_entry(file)
-        BrowseEverything::FileEntry.new(make_path(file), 
-                                        [key, make_path(file)].join(':'), 
-                                        file['displayName'] ? file['displayName'] : file['name'], 
-                                        file['size'] ? file['size'] : nil, 
+        BrowseEverything::FileEntry.new(make_path(file),
+                                        [key, make_path(file)].join(':'),
+                                        file['displayName'] ? file['displayName'] : file['name'],
+                                        file['size'] ? file['size'] : nil,
                                         Date.parse(file['lastModifiedDateTime']),
                                         folder?(file))
       end
 
-      # Derives a path from item (file or folder or drive) metadata 
+      # Derives a path from item (file or folder or drive) metadata
       # that can be used in subsequent items_by_id calls
       def make_path(file)
-        if file['parentReference'].present? 
+        if file['parentReference'].present?
           folder?(file) ? "#{file['parentReference']['driveId']}/items/#{file['id']}/children" : "#{file['parentReference']['driveId']}/items/#{file['id']}"
         elsif file['id'].include?(root_site)
           "#{file['id']}/drives"
@@ -199,7 +198,7 @@ module BrowseEverything
       end
 
       def folder?(file)
-        !file['file'].present?
+        file['file'].blank?
       end
 
       def root_site
@@ -216,12 +215,12 @@ module BrowseEverything
       end
 
       def items_by_id(id)
-        if id.include?(root_site)
-          item = sharepoint_request("https://graph.microsoft.com/v1.0/sites/#{id}")
-        else
-          item = sharepoint_request("https://graph.microsoft.com/v1.0/me/drives/#{id}")
-        end
-        item['value'].present? ? item['value'] : item
+        item = if id.include?(root_site)
+                 sharepoint_request("https://graph.microsoft.com/v1.0/sites/#{id}")
+               else
+                 sharepoint_request("https://graph.microsoft.com/v1.0/me/drives/#{id}")
+               end
+        item['value'].presence || item
       end
 
       def download_url(file)
