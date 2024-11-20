@@ -97,7 +97,7 @@ module BrowseEverything
         base.each do |k, v|
           query += ["#{k}=#{v}"]
         end
-        query += ["response_type=code"]
+        query += ["response_type=code", @consent_refresh.present? ? "prompt=consent" : nil].compact
 
         query.join('&')
       end
@@ -169,7 +169,11 @@ module BrowseEverything
           request = Net::HTTP::Get.new(uri.request_uri, { 'Authorization' => @auth })
           http.request(request)
         end
-        JSON.parse(response.body)
+
+        parsed_response = JSON.parse(response.body)
+        @consent_refresh = parsed_response.dig('error', 'message')&.include?('Missing scope permissions on the request.') ? true : false
+
+        parsed_response
       end
 
       # Constructs a BrowseEverything::FileEntry object for a Sharepoint file
