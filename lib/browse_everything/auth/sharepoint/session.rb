@@ -114,13 +114,14 @@ module BrowseEverything
           open(url, params)
         end
 
+        # rubocop: disable Metrics/CyclomaticComplexity
         def handle_errors(response, raw)
           status = response.code.to_i
           body = response.body
           begin
             parsed_body = JSON.parse(body)
           rescue
-            msg = body.blank? ? "no data returned" : body
+            msg = body.presence || "no data returned"
             parsed_body = { "message" => msg }
           end
 
@@ -141,6 +142,7 @@ module BrowseEverything
           end
           raw ? body : parsed_body
         end
+        # rubocop: enable Metrics/CyclomaticComplexity
       end
     end
   end
