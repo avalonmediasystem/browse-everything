@@ -97,13 +97,12 @@ describe BrowseEverything::Driver::Sharepoint do
     end
 
     describe '#contents' do
-      let(:site) do
+      let(:team) do
         {
           'value': [
             {
-              'id': 'site-id1',
-              'displayName': 'Site',
-              'lastModifiedDateTime': Time.current
+              'id': 'team-id1',
+              'displayName': 'Team'
             }
           ]
         }.to_json
@@ -122,9 +121,9 @@ describe BrowseEverything::Driver::Sharepoint do
 
       before do
         stub_request(
-          :get, "https://graph.microsoft.com/v1.0/sites?$select=id,displayName,name,lastModifiedDateTime&search="
+          :get, "https://graph.microsoft.com/v1.0/me/joinedTeams?$select=id,displayName"
         ).to_return(
-          body: site,
+          body: team,
           status: 200,
           headers: {}
         )
@@ -145,9 +144,9 @@ describe BrowseEverything::Driver::Sharepoint do
           expect(contents).not_to be_empty
 
           expect(contents.first).to be_a BrowseEverything::FileEntry
-          expect(contents.first.location).to eq 'sharepoint:site-id1/drives'
-          expect(contents.first.mtime).to be_a Date
-          expect(contents.first.name).to eq 'Site'
+          expect(contents.first.location).to eq 'sharepoint:team-id1/drives'
+          expect(contents.first.mtime).to eq nil
+          expect(contents.first.name).to eq 'Team'
           expect(contents.first.size).to eq nil
           expect(contents.first.type).to eq 'application/x-directory'
 
@@ -253,7 +252,16 @@ describe BrowseEverything::Driver::Sharepoint do
 
       it 'exposes the authorization endpoint URI' do
         expect(uri).to be_a Addressable::URI
-        expect(uri.to_s).to eq 'https://login.microsoftonline.com/TENANTID/oauth2/v2.0/authorize?client_id=CLIENTID&scope=offline_access https://graph.microsoft.com/.default&redirect_uri=http://example.com/browse/connect&response_type=code'
+        expect(uri.normalize.to_s).to eq 'https://login.microsoftonline.com/TENANTID/oauth2/v2.0/authorize?client_id=CLIENTID&scope=offline_access%20https://graph.microsoft.com/.default&redirect_uri=http://example.com/browse/connect&response_type=code'
+      end
+
+      context 'when permissions have changed' do
+        before { driver.instance_variable_set(:@consent_refresh, 'true') }
+
+        it 'includes "prompt=consent" in the auth_link' do
+          expect(uri).to be_a Addressable::URI
+          expect(uri.normalize.to_s).to eq 'https://login.microsoftonline.com/TENANTID/oauth2/v2.0/authorize?client_id=CLIENTID&scope=offline_access%20https://graph.microsoft.com/.default&redirect_uri=http://example.com/browse/connect&response_type=code&prompt=consent'
+        end
       end
     end
   end
