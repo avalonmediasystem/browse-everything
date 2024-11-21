@@ -42,7 +42,9 @@ module BrowseEverything
 
         folder = []
         if id.empty?
-          folder << sites
+          # The metadata returned does not have anything identifiable as results being teams.
+          # To facilitate getting subsequent routes correct we add a teams identifier.
+          folder << teams.map { |t| t.merge!({ teams: true }) }
           folder << drives
         else
           folder << items_by_id(id)
@@ -51,6 +53,9 @@ module BrowseEverything
         values = []
 
         folder.flatten.each do |f|
+          # Entries in folder array should not have a value key.
+          # Skip entries that do to prevent blank folders in list.
+          next if f['value']
           values << directory_entry(f)
         end
         @entries = values.compact
@@ -150,7 +155,9 @@ module BrowseEverything
       def expiration_time
         return unless @token
         expires_at = @token.fetch('expires_at', nil)
+        # rubocop: disable Style/SafeNavigation
         expires_at.nil? ? nil : expires_at.to_i
+        # rubocop: enable Style/SafeNavigation
       end
 
       def token_expired?
@@ -171,6 +178,8 @@ module BrowseEverything
         end
 
         parsed_response = JSON.parse(response.body)
+        # If permissions are changed, we need to redirect the user to the consent
+        # page so they can agree to the new permissions. Set flag for that here.
         @consent_refresh = parsed_response.dig('error', 'message')&.include?('Missing scope permissions on the request.') ? true : false
 
         parsed_response
@@ -185,7 +194,7 @@ module BrowseEverything
                                         [key, make_path(file)].join(':'),
                                         file['displayName'] ? file['displayName'] : file['name'],
                                         file['size'] ? file['size'] : nil,
-                                        Date.parse(file['lastModifiedDateTime']),
+                                        file['lastModifiedDateTime'] ? Date.parse(file['lastModifiedDateTime']) : nil,
                                         folder?(file))
       end
 
@@ -194,7 +203,7 @@ module BrowseEverything
       def make_path(file)
         if file['parentReference'].present?
           folder?(file) ? "#{file['parentReference']['driveId']}/items/#{file['id']}/children" : "#{file['parentReference']['driveId']}/items/#{file['id']}"
-        elsif file['id'].include?(root_site)
+        elsif file[:teams].present?
           "#{file['id']}/drives"
         else
           "#{file['id']}/root/children"
@@ -205,22 +214,26 @@ module BrowseEverything
         file['file'].blank?
       end
 
-      def root_site
-        @root_site ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites/root?select=siteCollection")['siteCollection']['hostname']
-      end
+      # def root_site
+      #   @root_site ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites/root?select=siteCollection")['siteCollection']['hostname']
+      # end
 
-      def sites
-        filter = config[:filter_terms]&.join(' OR ')
-        @sites ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites?$select=id,displayName,name,lastModifiedDateTime&search=#{filter}")['value']
+      # def sites
+      #   filter = config[:filter_terms]&.join(' OR ')
+      #   @sites ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites?$select=id,displayName,name,lastModifiedDateTime&search=#{filter}")['value']
+      # end
+
+      def teams
+        @teams ||= sharepoint_request("https://graph.microsoft.com/v1.0/me/joinedTeams?$select=id,displayName")['value']
       end
 
       def drives
-        @drives = sharepoint_request("https://graph.microsoft.com/v1.0/me/drives?$select=id,name,lastModifiedDateTime")['value']
+        @drives ||= sharepoint_request("https://graph.microsoft.com/v1.0/me/drives?$select=id,name,lastModifiedDateTime")['value']
       end
 
       def items_by_id(id)
-        item = if id.include?(root_site)
-                 sharepoint_request("https://graph.microsoft.com/v1.0/sites/#{id}")
+        item = if id.end_with?('drives')
+                 sharepoint_request("https://graph.microsoft.com/v1.0/groups/#{id}")
                else
                  sharepoint_request("https://graph.microsoft.com/v1.0/me/drives/#{id}")
                end
