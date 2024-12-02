@@ -1,6 +1,6 @@
 # Sharepoint Provider
 
-This provider will allow browse-everything to access Sharepoint on behalf of a specific user.
+This provider will allow browse-everything to access Sharepoint on behalf of a specific user. It routes through the `/me/joinedTeams` and `/me/drives` Graph API endpoints, so will list Teams that the user belongs to and the user's personal drives at the top level. Within each Team, it will expand to list any child drives or files that the user has permission to access.
 
 https://learn.microsoft.com/en-us/graph/auth-v2-user?tabs=http
 
