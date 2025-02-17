@@ -44,7 +44,7 @@ module BrowseEverything
         if id.empty?
           # The metadata returned does not have anything identifiable as results being teams.
           # To facilitate getting subsequent routes correct we add a teams identifier.
-          folder << teams.map { |t| t.merge!({ teams: true }) }
+          folder << teams&.map { |t| t.merge!({ teams: true }) }
           folder << drives
         else
           folder << items_by_id(id)
@@ -52,7 +52,7 @@ module BrowseEverything
 
         values = []
 
-        folder.flatten.each do |f|
+        folder.flatten.compact.each do |f|
           # Entries in folder array should not have a value key.
           # Skip entries that do to prevent blank folders in list.
           next if f['value']
@@ -223,8 +223,18 @@ module BrowseEverything
       #   @sites ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites?$select=id,displayName,name,lastModifiedDateTime&search=#{filter}")['value']
       # end
 
+      # There are circumstances when the teams endpoint can erroneously return no values.
+      # To prevent false negatives, we retry 3 times before returning nil.
       def teams
+        attempts ||= 0
         @teams ||= sharepoint_request("https://graph.microsoft.com/v1.0/me/joinedTeams?$select=id,displayName")['value']
+        raise StandardError if @teams.nil?
+
+        @teams
+      rescue
+        sleep 0.5
+        retry if (attempts += 1) <= 3
+        @teams
       end
 
       def drives
