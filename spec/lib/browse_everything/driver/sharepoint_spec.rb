@@ -159,6 +159,38 @@ describe BrowseEverything::Driver::Sharepoint do
         end
       end
 
+      context 'empty teams result' do
+        let(:team) do
+          {
+            'value': []
+          }.to_json
+        end
+
+        subject(:contents) { driver.contents.to_a }
+
+        it "retries the request" do
+          # For some reason the `expect(driver).to receive...` was overriding the stubbed request from our `before` block,
+          # causing the test to fail. Stubbing `sharepoint_request` directly here fixes the issue.
+          allow(driver).to receive(:sharepoint_request).with("https://graph.microsoft.com/v1.0/me/drives?$select=id,name,lastModifiedDateTime").and_return(drive)
+          # We request the teams endpoint a total of 4 times: 1 time from the intial request, then 3 retries.
+          expect(driver).to receive(:sharepoint_request).with("https://graph.microsoft.com/v1.0/me/joinedTeams?$select=id,displayName").exactly(4).times
+          expect(driver).to receive(:sharepoint_request).with("https://graph.microsoft.com/v1.0/me/drives?$select=id,name,lastModifiedDateTime").once
+          contents
+        end
+
+        it "returns only personal drives after retries" do
+          expect(contents).not_to be_empty
+          expect(contents.length).to eq 1
+
+          expect(contents.first).to be_a BrowseEverything::FileEntry
+          expect(contents.first.location).to eq 'sharepoint:drive-id2/root/children'
+          expect(contents.first.mtime).to be_a Date
+          expect(contents.first.name).to eq 'Test OneDrive'
+          expect(contents.first.size).to eq nil
+          expect(contents.first.type).to eq 'application/x-directory'
+        end
+      end
+
       context 'with id' do
         subject(:contents) { driver.contents('drive-id2/root/children').to_a }
         let(:file) do
