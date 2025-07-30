@@ -15,7 +15,7 @@ Community Support: [![Samvera Community Slack](https://img.shields.io/badge/samv
 This Gem allows your rails application to access user files from cloud storage.
 Currently there are drivers implemented for [Dropbox](http://www.dropbox.com),
 [Google Drive](http://drive.google.com),
-[Box](http://www.box.com), [Amazon S3](https://aws.amazon.com/s3/),
+[Box](http://www.box.com), [Amazon S3](https://aws.amazon.com/s3/), [Sharepoint](https://www.microsoft.com/en-us/microsoft-365/sharepoint/collaboration)
 and a server-side directory share.
 
 The gem uses [OAuth](http://oauth.net/) to connect to a user's account and
@@ -172,13 +172,13 @@ that can be posted back to Rails to re-create the array on the server side.
 
 #### Via data attributes
 
-To trigger browse-everything using data attributes, set the _data-toggle_ attribute to "browse-everything" on the HTML tag.  This tells the javascript where to attach the browse-everything behaviors. Pass in the options using the _data-route_ and _data-target_ attributes, as in `data-target="#myForm"`.
+To trigger browse-everything using data attributes, set the _data-bs-toggle_ attribute to "browse-everything" on the HTML tag.  This tells the javascript where to attach the browse-everything behaviors. Pass in the options using the _data-route_ and _data-bs-target_ attributes, as in `data-bs-target="#myForm"`.
 
 For example:
 
 ```html
-<button type="button" data-toggle="browse-everything" data-route="<%=browse_everything_engine.root_path%>"
-  data-target="#myForm" class="btn btn-large btn-success" id="browse">Browse!</button>
+<button type="button" data-bs-toggle="browse-everything" data-route="<%=browse_everything_engine.root_path%>"
+  data-bs-target="#myForm" class="btn btn-large btn-success" id="browse">Browse!</button>
 ```
 
 #### Via JavaScript
@@ -229,7 +229,7 @@ If you initialized browse-everything via JavaScript, the results data passed to 
 ```
 See [JavaScript Methods](https://github.com/samvera/browse-everything/wiki/JavaScript-Methods) for more info on using javascript to trigger browse-everything.
 
-If you initialized browse-everything via data-attributes and set the _target_ option (via the _data-target_ attribute or via the _target_ option on the javascript method), the results data be written as hidden fields in the `<form>` you've specified as the target.  When the user submits that form, the results will look like this:
+If you initialized browse-everything via data-attributes and set the _target_ option (via the _data-bs-target_ attribute or via the _target_ option on the javascript method), the results data be written as hidden fields in the `<form>` you've specified as the target.  When the user submits that form, the results will look like this:
 ```ruby
 "selected_files" => {
   "0"=>{
