@@ -1,11 +1,10 @@
 // It is important this file starts with underscore, so sprockets-sass won't try to compile
 // it independently, even though nothing explicit is directing it to.
 //
-// CSS for bootstrap 3, intended to be sass @import'ed into a context that has access to
-// bootstrap 3 mixins and variables.
+// CSS for bootstrap 5, intended to be sass @import'ed into a context that has access to
+// bootstrap 5 mixins and variables.
 //
-// This updates the original bootstrap3 SCSS to work with bootstrap 4, but also improves/fixes
-// some display while we're at it.
+// This updates the bootstrap 4 SCSS to work with bootstrap 5
 
 @import "jquery.treetable";
 @import "jquery.treetable.theme.browse";
