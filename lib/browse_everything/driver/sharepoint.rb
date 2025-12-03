@@ -15,7 +15,7 @@ module BrowseEverything
       end
 
       # Constructor
-      # @param config_values [Hash] configuration for the driver
+      # @param [Hash] config_values The configuration for the driver
       def initialize(config_values)
         self.class.authentication_klass ||= self.class.default_authentication_klass
         super(config_values)
@@ -35,7 +35,7 @@ module BrowseEverything
       end
 
       # Retrieves the file entry objects for a given path to MS-graph drive resource
-      # @param [String] id of the file or folder
+      # @param [String] id The id of the file or folder
       # @return [Array<BrowseEverything::FileEntry>]
       def contents(id = '')
         token_refresh if authorized?
@@ -86,7 +86,7 @@ module BrowseEverything
         authorize!
       end
 
-      # @param [String] id of the file on MS graph drive
+      # @param [String] id The id of the file on MS graph drive
       # @return [Array<String, Hash>]
       def link_for(id)
         file = items_by_id(id)
@@ -187,7 +187,7 @@ module BrowseEverything
 
       # Constructs a BrowseEverything::FileEntry object for a Sharepoint file
       # resource
-      # @param file [String] ID to the file resource
+      # @param [String] file The ID of the file resource
       # @return [BrowseEverything::File]
       def directory_entry(file)
         BrowseEverything::FileEntry.new(make_path(file),
@@ -213,15 +213,6 @@ module BrowseEverything
       def folder?(file)
         file['file'].blank?
       end
-
-      # def root_site
-      #   @root_site ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites/root?select=siteCollection")['siteCollection']['hostname']
-      # end
-
-      # def sites
-      #   filter = config[:filter_terms]&.join(' OR ')
-      #   @sites ||= sharepoint_request("https://graph.microsoft.com/v1.0/sites?$select=id,displayName,name,lastModifiedDateTime&search=#{filter}")['value']
-      # end
 
       def teams
         @teams ||= sharepoint_request("https://graph.microsoft.com/v1.0/me/joinedTeams?$select=id,displayName")['value']

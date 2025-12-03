@@ -1,6 +1,6 @@
 # Sharepoint Provider
 
-This provider will allow browse-everything to access Sharepoint on behalf of a specific user. It routes through the `/me/joinedTeams` and `/me/drives` Graph API endpoints, so will list Teams that the user belongs to and the user's personal drives at the top level. Within each Team, it will expand to list any child drives or files that the user has permission to access.
+This provider will allow browse-everything to access Sharepoint on behalf of a specific user. It routes through the `/me/joinedTeams` and `/me/drives` Graph API endpoints. This will list Teams that the user belongs to and the user's personal drives. Within each Team it will expand to list any child drives or files that the user has permission to access.
 
 https://learn.microsoft.com/en-us/graph/auth-v2-user?tabs=http
 
@@ -23,6 +23,6 @@ sharepoint:
   client_id: MyAppClientID
   client_secret: MyAppClientSecret
   tenant_id: MyAzureTenantID
-  redirect_uri: https://avalon_example.com/browse/connect
+  redirect_uri: https://example.com/browse/connect
   scope: offline_access https://graph.microsoft.com/.default
 ```
